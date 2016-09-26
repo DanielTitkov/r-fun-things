@@ -96,7 +96,7 @@ cortest <- corr.test(data[c('Marriages', 'Divorces', 'Fires')], method = 'spearm
 Была получена следующая матрица корреляций:
 ```{r correlation_matrix}
 cortest$r %>% 
-  knitr::kable(caption = 'Таблица 2. Матрица корреляций')
+  knitr::kable(caption = 'Таблица 2. Корреляции браков, разводов и пожаров.')
 ```
  
 Корреляциями соответсвуют следующие уровни значимости:

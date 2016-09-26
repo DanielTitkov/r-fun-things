@@ -1,0 +1,152 @@
+---
+title: "Взаимосвязь количества бракоразводных процессов и пожаров в Москве в 2015-2016 годах"
+author: "Титков Даниил"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+bibliography: science.bib
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(psych)
+library(ggthemes)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Введение
+
+Ученые почти единогласны в том, что свадьба и развод оказывают сильное влияние на психологическое состояние человека и в большинстве случаев оказываются сильнейшим стрессом, даже если оцениваются (в случае свадьбы) как радостные события [@Carr2015518; @Rudd201679]. Это согласуется с житейскими представлениями об этом вопросе. 
+
+Между тем, в средствах массовой информации многократно сообщалось о поджогах, связанных со свадьбами ([1](https://russia.tv/video/show/brand_id/5169/episode_id/1053399/video_id/1042726/), [2](http://www.vesti.ru/doc.html?id=1901157&cid=520), [3](http://obozrevatel.com/family/v-britanii-zhenih-podzheg-drevnij-zamok-vo-vremya-svadbyi.htm)) и разводами ([1](http://www.e1.ru/news/spool/news_id-449260.html), [2](http://skoronovosti.ru/nnovgorod/2016/09/01/247046-nizhegorodets-podzheg-mashinu-zheny-za-zhelanie-razvestis.html), [3](http://petrowsk64.ru/posle-razvoda-zhitel-petrovska-podzheg-dom-byivshey-zhenyi.html), [4](http://www.mk.ru/incident/2015/05/19/podrostok-podzheg-kvartiru-chtoby-otomstit-novomu-otcu-za-razvod-roditeley.html), [5](http://v-kurse-voronezh.ru/proishestvia/21357)). Ввиду этого обстоятельства автор исследования задался вопросом, являются ли свадьбы и разводы существенными факторами возникновения пожаров. 
+
+## Гипотеза
+
+Было сделано _обоснованное предположение_, что количество пожаров взаимосвязано с числом браков и разводов. 
+
+## Данные
+
+```{r data_read}
+
+marriages <- read.csv2('marriage.csv')
+marriage <- marriages %>% 
+  select(StateRegistrationOfMarriage, Year, Month) %>% 
+  rename(Marriages = StateRegistrationOfMarriage) %>% 
+  filter(Year > 2014) %>% 
+  slice(1:19) %>% 
+  mutate(Year = as.factor(Year))
+
+divorces <- read.csv2('divorce.csv')
+divorce <- divorces %>% 
+  select(StateRegistrationOfDivorce, Year, Month) %>% 
+  rename(Divorces = StateRegistrationOfDivorce) %>% 
+  filter(Year > 2014) %>% 
+  slice(1:19) %>% 
+  mutate(Year = as.factor(Year))
+
+fires <- read.csv2('fires.csv')
+fires <- fires %>% 
+  select(Calls, MonthReport) %>% 
+  separate(MonthReport, c('Month', 'Year'), sep = ' ') %>% 
+  mutate(Year = as.factor(Year)) %>% 
+  mutate(Month = as.factor(tolower(Month))) 
+
+```
+
+
+Для проверки гипотезы исследования было решено обратиться к открытым данным. Данные были взяты с [Портала открытых данных Правительства Москвы](http://data.mos.ru/). Для исследования использовались следующие наборы данных:
+
+1. Число браков по годам и месяцам. Данные доступны по [ссылке]( <http://data.mos.ru/opendata/7704111479-chislo-brakov-po-godam>). Всего в данных содержится `r nrow(marriages)`  наблюдений за период с января 2010г. по август 2016г.
+
+2. Число разводов по годам и месяцам. Данные доступны по [ссылке]( <http://data.mos.ru/opendata/7704111479-chislo-razvodov-po-godam>). Всего в данных содержится `r nrow(divorces)`  наблюдений за период с января 2010г. по август 2016г.
+
+3. Данные вызовов подразделений пожарно-спасательного гарнизона города Москвы по месяцам. Данные доступны по [ссылке]( <http://data.mos.ru/opendata/7710474791-dannye-vyzovov-pojarnoy-slujby-po-mesyatsam>). Число вызовов пожарно-спасательных бригад было принято за показатель числа пожаров. Всего в данных содержится `r nrow(fires)`  наблюдений за период с января 2015г. по июль 2016г.
+
+Так как информация по вызовом пожарных бригад имеется только за 2015 и 2016 год, были отобраны наблюдения по бракам и разводам за эти года, после чего данные были сведены в одну таблицу, с которой и проводилась дальнейшая работа. 
+
+```{r data_transformations}
+data <- left_join(marriage, divorce, by = c('Year', 'Month'))
+data$Fires <- fires$Calls
+data[c(2, 3, 1, 4, 5)] # отображение колонок в логичном порядке
+
+```
+
+
+## Метод
+
+Для выявления взаимосвязи между переменными, представленными в количественных шкалах, было решено использовать коэффициент корреляции, _потому что вечное не устаревает_. В силу небольшого числа наблюдений был выбран коэффициент коллеряции Спирмена. 
+
+В процессе работы использовался язык R версии `r getRversion()`, а также следующие дополнения (пакеты): dplyr, tidyr, ggplot2, psych, ggthemes. Не обошлось и без источника вдохновения[^1]. 
+
+[^1]: [Вдохновение](http://www.tylervigen.com/spurious-correlations)
+
+## Анализ
+
+```{r correlations_calc}
+cortest <- corr.test(data[c('Marriages', 'Divorces', 'Fires')], method = 'spearman', adjust = 'none') # тест из пакета psych
+
+```
+
+Была получена следующая матрица корреляций:
+```{r correlation_matrix}
+cortest$r
+```
+ 
+Корреляциями соответсвуют следующие уровни значимости:
+
+```{r correlation_p}
+cortest$p
+
+```
+
+Нетрудно видеть, что корреляция между числом разводов и числом пожаров значима на уровне p < 0.05 (p = 0.034), следовательно, можно сделать предположение, что существует взаимосвязь между числом разводов и числом пожаров в Москве в течение исследуемого периода (январь 2015г. - июль 2016г.). 
+
+Выявленную взаимосвязь также _весьма убедительно_ отражает график.
+
+```{r plot1, fig.cap = 'Синими линиями отображены данные по разводам, красными - по пожарам. Пунктирными линиями отображены приближения, полученные методом локальной регрессии (locally weighted scatterplot smoothing).'}
+data_united <- unite(data, TimePeriod, Month, Year, sep = ' ', remove = TRUE)
+
+ggplot(data_united, aes(x = TimePeriod, group = 'none')) +
+  geom_smooth(aes(y = Divorces), color = 'blue', se = F, linetype = 2) +
+  geom_smooth(aes(y = Fires), color = 'red', se = F, linetype = 2) +
+  geom_line(aes(y = Divorces), color = 'blue') +
+  geom_line(aes(y = Fires), color = 'red') +
+  theme_minimal() + 
+  xlab('Временной период') +
+  ylab('Количество') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+О наличии взаимосвязи также говорит угол наклона регрессионных прямых, что можно видеть на следующем графике. 
+
+```{r plot2, fig.cap = 'Пунктирными линиями отображены приближения, полученные методом линейной регрессии.'}
+ggplot(data, aes(x = Fires, y = Divorces, color = Year, group = Year)) +
+  geom_point() +
+  geom_smooth(method = 'lm', linetype = 2, se = F) +
+  geom_line(size = 1) + 
+  theme_minimal() +
+  scale_color_brewer(type = 'qual', palette = 2, guide = guide_legend(title = "Год")) +
+  xlab('Количество пожаров') + 
+  ylab('Количество разводов')
+
+```
+
+
+## Обсуждение результатов
+
+Полученные результаты трудно объяснить однозначно. Тем не менее, они дают _серьезные_ основания для дальнейших исследований в данной области. В частности, хорошим решением будет провести аналогичные исследования на данных других городов России и мира, а также обратиться в архивы и получить данные за прошлые года и десятилетия (а если повезет, то и века). Возможно, разводы действительно являются существенным фактором возникновения пожаров, хотя возможно, что взаимосвязь обусловлена влиянием неучтенных переменных. Для науки очень важно это выяснить. 
+
+## Выводы
+
+1. Существует статистически достоверная взаимосвязь между числов разводов и пожаров в городе Москве за период с января 2015 до июля 2016 года. 
+2. Не выявлено взаимосвязи между числом браков и пожаров в городе Москве за рассматриваемый период. 
+
+## Заключение
+
+Женитесь на правильных людях. Любите друга друга. Не играйте с огнём. ^_^
+
+## Библиография
+

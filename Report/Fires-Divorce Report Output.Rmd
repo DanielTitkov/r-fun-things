@@ -72,7 +72,8 @@ fires <- fires %>%
 ```{r data_transformations}
 data <- left_join(marriage, divorce, by = c('Year', 'Month'))
 data$Fires <- fires$Calls
-data[c(2, 3, 1, 4, 5)] # отображение колонок в логичном порядке
+data[c(2, 3, 1, 4, 5)] %>% 
+  knitr::kable(caption = 'Таблица 1. Данные по пожарам и разводам в 2015-2016 годах') # отображение колонок в логичном порядке
 
 ```
 
@@ -94,13 +95,15 @@ cortest <- corr.test(data[c('Marriages', 'Divorces', 'Fires')], method = 'spearm
 
 Была получена следующая матрица корреляций:
 ```{r correlation_matrix}
-cortest$r
+cortest$r %>% 
+  knitr::kable(caption = 'Таблица 2. Матрица корреляций')
 ```
  
 Корреляциями соответсвуют следующие уровни значимости:
 
 ```{r correlation_p}
-cortest$p
+cortest$p %>% 
+  knitr::kable(caption = 'Таблица 3. Уровни значимости корреляций.')
 
 ```
 
@@ -108,7 +111,7 @@ cortest$p
 
 Выявленную взаимосвязь также _весьма убедительно_ отражает график.
 
-```{r plot1, fig.cap = 'Синими линиями отображены данные по разводам, красными - по пожарам. Пунктирными линиями отображены приближения, полученные методом локальной регрессии (locally weighted scatterplot smoothing).'}
+```{r plot1, fig.cap = 'Рисунок 1. Синими линиями отображены данные по разводам, красными - по пожарам. Пунктирными линиями отображены приближения, полученные методом локальной регрессии (locally weighted scatterplot smoothing).'}
 data_united <- unite(data, TimePeriod, Month, Year, sep = ' ', remove = TRUE)
 
 ggplot(data_united, aes(x = TimePeriod, group = 'none')) +
@@ -124,7 +127,7 @@ ggplot(data_united, aes(x = TimePeriod, group = 'none')) +
 
 О наличии взаимосвязи также говорит угол наклона регрессионных прямых, что можно видеть на следующем графике. 
 
-```{r plot2, fig.cap = 'Пунктирными линиями отображены приближения, полученные методом линейной регрессии.'}
+```{r plot2, fig.cap = 'Рисунок 2. Пунктирными линиями отображены приближения, полученные методом линейной регрессии.'}
 ggplot(data, aes(x = Fires, y = Divorces, color = Year, group = Year)) +
   geom_point() +
   geom_smooth(method = 'lm', linetype = 2, se = F) +

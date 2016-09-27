@@ -129,13 +129,13 @@ ggplot(data_united, aes(x = TimePeriod, group = 'none')) +
 
 ```{r plot2, fig.cap = 'Рисунок 2. Пунктирными линиями отображены приближения, полученные методом линейной регрессии.'}
 ggplot(data, aes(x = Fires, y = Divorces, color = Year, group = Year)) +
-  geom_point() +
-  geom_smooth(method = 'lm', linetype = 2, se = F) +
-  geom_line(size = 1) + 
+  geom_point(size = 2) + 
+  geom_smooth(method = 'lm', se = F, linetype = 2, size = 1.5) + 
+  scale_color_brewer(type = 'qual', palette = 3) +
   theme_minimal() +
-  scale_color_brewer(type = 'qual', palette = 2, guide = guide_legend(title = "Год")) +
   xlab('Количество пожаров') + 
   ylab('Количество разводов')
+  
 
 ```
 

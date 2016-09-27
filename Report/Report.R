@@ -74,4 +74,14 @@ ggplot(data, aes(x = Fires, y = Divorces, color = Year, group = Year)) +
   scale_color_brewer(type = 'qual', palette = 2, guide = guide_legend(title = "Год")) +
   xlab('Количество пожаров') + 
   ylab('Количество разводов')
+
+
+
+ggplot(data, aes(x = Fires, y = Divorces, color = Year, group = Year)) +
+  geom_point() + 
+  geom_smooth(method = 'lm', se = F) + 
+  scale_color_brewer(type = 'qual', palette = 4) +
+  theme_minimal() +
+  xlab('Количество пожаров') + 
+  ylab('Количество разводов')
   
